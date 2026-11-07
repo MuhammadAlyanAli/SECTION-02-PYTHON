@@ -1,0 +1,120 @@
+
+#Task 05 | Expression Validator and Evaluator
+#Concepts: Stacks, parsing, exception handling
+#Problem: Create a calculator for integer expressions containing +, -, *, /, parentheses, and whitespace. Apply standard operator precedence and parentheses.
+#Requirements: Do not use eval(), exec(), or third-party parsers. Handle unary minus, malformed expressions, and division by zero.
+#Sample / expected behavior: Input: "-(3 + 2) * 4 + 18 / 3" -> -14.0.
+
+def calculate(expression):
+    tokens = []
+    i = 0
+
+    while i < len(expression):
+        char = expression[i]
+
+        if char.isspace():
+            i += 1
+
+        elif char.isdigit():
+            number = ""
+
+            while i < len(expression) and expression[i].isdigit():
+                number += expression[i]
+                i += 1
+
+            tokens.append(int(number))
+
+        elif char in "+-*/()":
+            tokens.append(char)
+            i += 1
+
+        else:
+            raise ValueError("Invalid character")
+
+    position = 0
+
+    def parse_expression():
+        nonlocal position
+
+        result = parse_term()
+
+        while position < len(tokens) and tokens[position] in ("+", "-"):
+            operator = tokens[position]
+            position += 1
+
+            number = parse_term()
+
+            if operator == "+":
+                result += number
+            else:
+                result -= number
+
+        return result
+
+    def parse_term():
+        nonlocal position
+
+        result = parse_factor()
+
+        while position < len(tokens) and tokens[position] in ("*", "/"):
+            operator = tokens[position]
+            position += 1
+
+            number = parse_factor()
+
+            if operator == "*":
+                result *= number
+            else:
+                if number == 0:
+                    raise ZeroDivisionError("Cannot divide by zero")
+
+                result /= number
+
+        return result
+
+    def parse_factor():
+        nonlocal position
+
+        if position >= len(tokens):
+            raise ValueError("Incomplete expression")
+
+        token = tokens[position]
+
+        if token == "-":
+            position += 1
+            return -parse_factor()
+
+        if token == "+":
+            position += 1
+            return parse_factor()
+
+        if token == "(":
+            position += 1
+            result = parse_expression()
+
+            if position >= len(tokens) or tokens[position] != ")":
+                raise ValueError("Missing closing bracket")
+
+            position += 1
+            return result
+
+        if isinstance(token, int):
+            position += 1
+            return token
+
+        raise ValueError("Invalid expression")
+
+    if not tokens:
+        raise ValueError("Empty expression")
+
+    answer = parse_expression()
+
+    if position != len(tokens):
+        raise ValueError("Invalid expression")
+
+    return answer
+
+
+expression = "-(3 + 2) * 4 + 18 / 3"
+
+print(calculate(expression))

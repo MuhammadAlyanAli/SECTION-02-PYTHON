@@ -1,0 +1,74 @@
+#Task 07 | Employee Payroll Engine
+#Concepts: Inheritance, polymorphism, abstract classes
+#Problem: Define abstract Employee with calculate_pay(). Implement SalariedEmployee, HourlyEmployee, and CommissionEmployee with different pay formulas. Generate a unified payroll summary.
+#Requirements: Hourly overtime above 40 hours pays 1.5x. Commission employees receive base + sales*rate. Prevent direct instantiation of Employee.
+#Sample / expected behavior: Hourly rate=20, hours=45 -> 950; Commission base=500, sales=4000, rate=.10 -> 900.
+
+from abc import ABC
+
+
+class Employee(ABC):
+
+    def __init__(self, name):
+        self.name = name
+
+    
+    def calculate_pay(self):
+        pass
+
+
+class SalariedEmployee(Employee):
+
+    def __init__(self, name, salary):
+        super().__init__(name)
+        self.salary = salary
+
+    def calculate_pay(self):
+        return self.salary
+
+
+class HourlyEmployee(Employee):
+
+    def __init__(self, name, rate, hours):
+        super().__init__(name)
+        self.rate = rate
+        self.hours = hours
+
+    def calculate_pay(self):
+        if self.hours <= 40:
+            return self.hours * self.rate
+
+        regular_pay = 40 * self.rate
+        overtime_pay = (self.hours - 40) * self.rate * 1.5
+
+        return regular_pay + overtime_pay
+
+
+class CommissionEmployee(Employee):
+
+    def __init__(self, name, base_salary, sales, rate):
+        super().__init__(name)
+        self.base_salary = base_salary
+        self.sales = sales
+        self.rate = rate
+
+    def calculate_pay(self):
+        return self.base_salary + (self.sales * self.rate)
+
+
+def payroll_summary(employees):
+    for employee in employees:
+        print(
+            employee.name,
+            "Total Pay:",
+            employee.calculate_pay()
+        )
+
+
+employees = [
+    SalariedEmployee("Ali", 50000),
+    HourlyEmployee("Ahmed", 20, 45),
+    CommissionEmployee("Sara", 500, 4000, 0.10)
+]
+
+payroll_summary(employees)

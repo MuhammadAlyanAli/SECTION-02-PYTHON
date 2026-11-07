@@ -1,0 +1,37 @@
+
+
+#Task 02 | Longest Valid Window
+#Concepts: Sliding window, dictionaries
+#Problem: Write longest_unique_window(text) to find the longest contiguous substring with no repeated characters. Return the substring, start index, and length.
+#Requirements: Target O(n) time. On equal-length windows, select the earliest. Treat spaces and punctuation as characters.
+#Sample / expected behavior: Input: "abcabcbb" -> ("abc", 0, 3); "" -> ("", 0, 0).
+
+def longest_unique_window(text):
+    last_seen = {}
+    start = 0
+
+    best_start = 0
+    best_length = 0
+
+    for i in range(len(text)):
+        char = text[i]
+
+        if char in last_seen and last_seen[char] >= start:
+            start = last_seen[char] + 1
+
+        last_seen[char] = i
+
+        current_length = i - start + 1
+
+        if current_length > best_length:
+            best_length = current_length
+            best_start = start
+
+    substring = text[best_start:best_start + best_length]
+
+    return substring, best_start, best_length
+
+
+text = "abcabcbb"
+
+print(longest_unique_window(text))

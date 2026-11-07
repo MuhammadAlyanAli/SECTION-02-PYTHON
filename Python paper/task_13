@@ -1,0 +1,64 @@
+#Task 13 | Booking Conflict Scheduler
+#Concepts: Datetime, sorting, interval algorithms
+#Problem: Implement a room booking scheduler. Each booking has room, start datetime, end datetime, and booking ID. Accept bookings only when they do not overlap existing bookings for the same room.
+#Requirements: Use datetime objects; reject end<=start and duplicate IDs. Adjacent bookings are allowed. Return conflicts for rejected requests.
+#Sample / expected behavior: Room A: 09:00–10:00 and 10:00–11:00 accepted; 09:30–10:30 rejected.
+
+from datetime import datetime
+
+
+class BookingScheduler:
+
+    def __init__(self):
+        self.bookings = []
+        self.booking_ids = set()
+
+    def add_booking(self, room, start, end, booking_id):
+
+        if booking_id in self.booking_ids:
+            return "Rejected: Duplicate booking ID"
+
+        if end <= start:
+            return "Rejected: Invalid booking time"
+
+        for booking in self.bookings:
+
+            if booking["room"] == room:
+
+                if start < booking["end"] and end > booking["start"]:
+                    return "Rejected: Booking conflict"
+
+        new_booking = {
+            "room": room,
+            "start": start,
+            "end": end,
+            "booking_id": booking_id
+        }
+
+        self.bookings.append(new_booking)
+        self.booking_ids.add(booking_id)
+
+        self.bookings.sort(
+            key=lambda x: (x["room"], x["start"])
+        )
+
+        return "Booking accepted"
+
+
+scheduler = BookingScheduler()
+
+date = "2026-11-07"
+
+start1 = datetime.strptime(date + " 09:00", "%Y-%m-%d %H:%M")
+end1 = datetime.strptime(date + " 10:00", "%Y-%m-%d %H:%M")
+
+start2 = datetime.strptime(date + " 10:00", "%Y-%m-%d %H:%M")
+end2 = datetime.strptime(date + " 11:00", "%Y-%m-%d %H:%M")
+
+start3 = datetime.strptime(date + " 09:30", "%Y-%m-%d %H:%M")
+end3 = datetime.strptime(date + " 10:30", "%Y-%m-%d %H:%M")
+
+
+print(scheduler.add_booking("A", start1, end1, 1))
+print(scheduler.add_booking("A", start2, end2, 2))
+print(scheduler.add_booking("A", start3, end3, 3))

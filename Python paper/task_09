@@ -1,0 +1,65 @@
+#Task 09 | Streaming Log Inspector
+#Concepts: Generators, iterators, file handling
+#Problem: Write a generator read_errors(path) that streams a log file line by line, yielding (line_number, timestamp, message) only for ERROR records. Build summarize_errors() to count errors by date.
+#Requirements: Do not load the whole file into memory. Skip malformed lines while tracking their count. Expected format: YYYY-MM-DD HH:MM:SS | LEVEL | message.
+#Sample / expected behavior: Input line: 2026-11-07 10:30:00 | ERROR | Connection lost -> (1,"2026-11-07 10:30:00","Connection lost").
+
+from collections import defaultdict
+
+
+malformed_count = 0
+
+
+def read_errors(path):
+    global malformed_count
+    malformed_count = 0
+
+    with open(path, "r") as file:
+        for line_number, line in enumerate(file, start=1):
+            parts = line.strip().split("|")
+
+            if len(parts) != 3:
+                malformed_count += 1
+                continue
+
+            timestamp = parts[0].strip()
+            level = parts[1].strip()
+            message = parts[2].strip()
+
+            try:
+                from datetime import datetime
+                datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                malformed_count += 1
+                continue
+
+            if level == "ERROR":
+                yield line_number, timestamp, message
+
+
+def summarize_errors(path):
+    error_count = defaultdict(int)
+
+    for line_number, timestamp, message in read_errors(path):
+        date = timestamp.split()[0]
+        error_count[date] += 1
+
+        print(line_number, timestamp, message)
+
+    print("Errors by date:")
+
+    for date, count in error_count.items():
+        print(date, count)
+
+    print("Malformed lines:", malformed_count)
+
+
+# Sample log file
+with open("sample.log", "w") as file:
+    file.write("2026-11-07 10:30:00 | ERROR | Connection lost\n")
+    file.write("2026-11-07 11:30:00 | INFO | System running\n")
+    file.write("2026-11-07 12:30:00 | ERROR | Database failed\n")
+    file.write("Invalid log line\n")
+
+
+summarize_errors("sample.log")

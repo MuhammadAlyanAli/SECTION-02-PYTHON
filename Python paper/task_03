@@ -1,0 +1,32 @@
+
+#Task 03 | Recursive JSON Path Explorer
+#Concepts: Recursion, nested lists/dictionaries
+#Problem: Implement find_paths(data, target) that recursively searches nested dictionaries and lists and returns all paths whose value equals target.
+#Requirements: Use dot notation for dictionary keys and [index] for list positions. Preserve traversal order; do not treat bool True as numeric 1.
+#Sample / expected behavior: Input: {"a":[{"x":5},5],"b":{"y":5}}, target=5 -> ["a[0].x", "a[1]", "b.y"].
+
+def find_paths(data, target):
+    paths = []
+
+    def search(value, path):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                new_path = str(key) if path == "" else path + "." + str(key)
+                search(item, new_path)
+
+        elif isinstance(value, list):
+            for i, item in enumerate(value):
+                search(item, path + "[" + str(i) + "]")
+
+        else:
+            if type(value) == type(target) and value == target:
+                paths.append(path)
+
+    search(data, "")
+
+    return paths
+
+
+data = {"a": [ {"x": 5}, 5 ],"b": {"y": 5}}
+
+print(find_paths(data, 5))

@@ -1,0 +1,57 @@
+
+#Task 04 | Dependency Execution Planner
+#Concepts: Graphs, sets, algorithms
+#Problem: Given tasks and prerequisite pairs (A,B) meaning A must finish before B, return a valid execution order.
+#Requirements: Detect cycles and raise ValueError with a clear message. For multiple available tasks, select alphabetically first. Reject unknown task names.
+#Sample / expected behavior: Tasks=["build","test","deploy"]; dependencies=[("build","test"),("test","deploy")] -> ["build","test","deploy"].
+
+def execution_order(tasks, dependencies):
+    task_set = set(tasks)
+
+    if len(task_set) != len(tasks):
+        raise ValueError("Duplicate task names found")
+
+    graph = {task: [] for task in tasks}
+    indegree = {task: 0 for task in tasks}
+
+    for first, second in dependencies:
+        if first not in task_set or second not in task_set:
+            raise ValueError("Unknown task name found")
+
+        graph[first].append(second)
+        indegree[second] += 1
+
+    available = []
+
+    for task in tasks:
+        if indegree[task] == 0:
+            available.append(task)
+
+    available.sort()
+    result = []
+
+    while available:
+        current = available.pop(0)
+        result.append(current)
+
+        for next_task in graph[current]:
+            indegree[next_task] -= 1
+
+            if indegree[next_task] == 0:
+                available.append(next_task)
+                available.sort()
+
+    if len(result) != len(tasks):
+        raise ValueError("Cycle detected in dependencies")
+
+    return result
+
+
+tasks = ["build", "test", "deploy"]
+
+dependencies = [
+    ("build", "test"),
+    ("test", "deploy")
+]
+
+print(execution_order(tasks, dependencies))

@@ -1,0 +1,58 @@
+#Task 08 | Cache Decorator with Expiration
+#Concepts: Decorators, closures, functools, time
+#Problem: Implement @ttl_cache(seconds) that caches results for repeated positional and keyword arguments and recomputes after expiration. Track cache hits and misses.
+#Requirements: Preserve function metadata with functools.wraps. Handle equivalent keyword argument order; document behavior for unhashable inputs. Use time.monotonic().
+#Sample / expected behavior: A call with x=2,y=3 followed by y=3,x=2 before expiry should return a cache hit.
+
+import time
+from functools import wraps
+
+
+def ttl_cache(seconds):
+
+    def decorator(func):
+        cache = {}
+
+        func.cache_hits = 0
+        func.cache_misses = 0
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                key = (args, tuple(sorted(kwargs.items())))
+                hash(key)
+            except TypeError:
+                raise TypeError("Cache arguments must be hashable")
+
+            current_time = time.monotonic()
+
+            if key in cache:
+                result, saved_time = cache[key]
+
+                if current_time - saved_time < seconds:
+                    func.cache_hits += 1
+                    return result
+
+            func.cache_misses += 1
+
+            result = func(*args, **kwargs)
+            cache[key] = (result, current_time)
+
+            return result
+
+        return wrapper
+
+    return decorator
+
+
+@ttl_cache(5)
+def add(x, y):
+    print("Calculating...")
+    return x + y
+
+
+print(add(x=2, y=3))
+print(add(y=3, x=2))
+
+print("Hits:", add.cache_hits)
+print("Misses:", add.cache_misses)

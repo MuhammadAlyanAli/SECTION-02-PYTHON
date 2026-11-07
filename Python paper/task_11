@@ -1,0 +1,112 @@
+
+#Task 11 | Multi-File Student Gradebook
+#Concepts: File handling, dictionaries, exceptions
+#Problem: Merge students.csv (student_id,name) and scores.csv (student_id,subject,marks). Calculate per-student average, grade, and rank; export report.csv.
+#Requirements: Marks must be 0–100; reject unknown IDs and duplicate student-subject entries. Grades: A>=85, B>=70, C>=55, D>=40, otherwise F. Rank by average, then ID.
+#Sample / expected behavior: Student 101 with marks 90,80,85 -> average 85.0, grade A.
+
+import csv
+
+
+def calculate_grade(average):
+    if average >= 85:
+        return "A"
+    elif average >= 70:
+        return "B"
+    elif average >= 55:
+        return "C"
+    elif average >= 40:
+        return "D"
+    else:
+        return "F"
+
+
+def create_gradebook():
+    students = {}
+    scores = {}
+
+    with open("students.csv", "r") as file:
+        reader = csv.DictReader(file)
+
+        for row in reader:
+            student_id = row["student_id"]
+
+            if student_id in students:
+                raise ValueError("Duplicate student ID")
+
+            students[student_id] = row["name"]
+            scores[student_id] = []
+
+    seen = set()
+
+    with open("scores.csv", "r") as file:
+        reader = csv.DictReader(file)
+
+        for row in reader:
+            student_id = row["student_id"]
+            subject = row["subject"]
+            marks = float(row["marks"])
+
+            if student_id not in students:
+                raise ValueError("Unknown student ID")
+
+            if not 0 <= marks <= 100:
+                raise ValueError("Marks must be between 0 and 100")
+
+            key = (student_id, subject)
+
+            if key in seen:
+                raise ValueError("Duplicate subject entry")
+
+            seen.add(key)
+            scores[student_id].append(marks)
+
+    report = []
+
+    for student_id, name in students.items():
+        if scores[student_id]:
+            average = sum(scores[student_id]) / len(scores[student_id])
+        else:
+            average = 0
+
+        report.append({
+            "student_id": student_id,
+            "name": name,
+            "average": round(average, 2),
+            "grade": calculate_grade(average)
+        })
+
+    report.sort(key=lambda x: (-x["average"], x["student_id"]))
+
+    with open("report.csv", "w", newline="") as file:
+        fields = ["student_id", "name", "average", "grade", "rank"]
+        writer = csv.DictWriter(file, fieldnames=fields)
+
+        writer.writeheader()
+
+        for rank, student in enumerate(report, start=1):
+            student["rank"] = rank
+            writer.writerow(student)
+
+    print("Gradebook created successfully.")
+
+
+# Sample students file
+with open("students.csv", "w", newline="") as file:
+    writer = csv.writer(file)
+    writer.writerow(["student_id", "name"])
+    writer.writerow(["101", "Ali"])
+    writer.writerow(["102", "Sara"])
+
+
+# Sample scores file
+with open("scores.csv", "w", newline="") as file:
+    writer = csv.writer(file)
+    writer.writerow(["student_id", "subject", "marks"])
+    writer.writerow(["101", "Python", 90])
+    writer.writerow(["101", "SQL", 80])
+    writer.writerow(["101", "Database", 85])
+    writer.writerow(["102", "Python", 75])
+
+
+create_gradebook()

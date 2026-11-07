@@ -1,0 +1,116 @@
+#Task 06 | Banking Ledger with OOP
+#Concepts: Classes, encapsulation, properties
+#Problem: Build Account and Bank classes. Support deposit, withdrawal, transfer, and account statements. Maintain immutable transaction records containing transaction ID, action, amount, and resulting balance.
+#Requirements: Reject nonpositive amounts, insufficient funds, and nonexistent accounts. A transfer must be atomic: both balances update or neither does.
+#Sample / expected behavior: Account A=1000, B=200; transfer 350 from A to B -> A=650, B=550.
+
+from dataclasses import dataclass
+import uuid
+
+
+@dataclass(frozen=True)
+class Transaction:
+    transaction_id: str
+    action: str
+    amount: float
+    balance: float
+
+
+class Account:
+
+    def __init__(self, account_number, balance=0):
+        if balance < 0:
+            raise ValueError("Balance cannot be negative")
+
+        self.account_number = account_number
+        self.__balance = balance
+        self.transactions = []
+
+    @property
+    def balance(self):
+        return self.__balance
+
+    def deposit(self, amount):
+        if amount <= 0:
+            raise ValueError("Amount must be positive")
+
+        self.__balance += amount
+
+        self.transactions.append(
+            Transaction(str(uuid.uuid4()), "Deposit",
+                        amount, self.__balance)
+        )
+
+    def withdraw(self, amount):
+        if amount <= 0:
+            raise ValueError("Amount must be positive")
+
+        if amount > self.__balance:
+            raise ValueError("Insufficient funds")
+
+        self.__balance -= amount
+
+        self.transactions.append(
+            Transaction(str(uuid.uuid4()), "Withdrawal",
+                        amount, self.__balance)
+        )
+
+    def statement(self):
+        for transaction in self.transactions:
+            print(transaction)
+
+
+class Bank:
+
+    def __init__(self):
+        self.accounts = {}
+
+    def add_account(self, account):
+        if account.account_number in self.accounts:
+            raise ValueError("Account already exists")
+
+        self.accounts[account.account_number] = account
+
+    def transfer(self, from_account, to_account, amount):
+
+        if from_account not in self.accounts or to_account not in self.accounts:
+            raise ValueError("Account does not exist")
+
+        if from_account == to_account:
+            raise ValueError("Cannot transfer to same account")
+
+        if amount <= 0:
+            raise ValueError("Amount must be positive")
+
+        sender = self.accounts[from_account]
+        receiver = self.accounts[to_account]
+
+        if sender.balance < amount:
+            raise ValueError("Insufficient funds")
+
+        sender._Account__balance -= amount
+        receiver._Account__balance += amount
+
+        sender.transactions.append(
+            Transaction(str(uuid.uuid4()), "Transfer Out",
+                        amount, sender.balance)
+        )
+
+        receiver.transactions.append(
+            Transaction(str(uuid.uuid4()), "Transfer In",
+                        amount, receiver.balance)
+        )
+
+
+bank = Bank()
+
+account_a = Account("A", 1000)
+account_b = Account("B", 200)
+
+bank.add_account(account_a)
+bank.add_account(account_b)
+
+bank.transfer("A", "B", 350)
+
+print("Account A:", account_a.balance)
+print("Account B:", account_b.balance)

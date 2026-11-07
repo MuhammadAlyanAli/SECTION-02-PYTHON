@@ -1,0 +1,82 @@
+
+#Task 01 | Nested Transaction Analyzer
+#Concepts: Data structures, sorting, comprehensions
+#Problem: Given a list of transaction dictionaries with keys id, customer, category, amount, and status, produce a report containing each customer’s successful spending, top category, and rank by spending. Ignore failed transactions and reject duplicate transaction IDs.
+#Requirements: Return a list sorted by spending descending, then customer name ascending. Customers with no successful transactions must appear with total 0. Do not use pandas.
+#Sample / expected behavior: Input: [{id:1,customer:"Ali",category:"Food",amount:500,status:"success"},{id:2,customer:"Ali",category:"Travel",amount:200,status:"failed"},{id:3,customer:"Sara",category:"Food",amount:700,status:"success"}]. Output totals: Sara=700, Ali=500.
+
+
+def analyze_transactions(transactions, customers):
+    transaction_ids = set()
+    spending = {}
+    categories = {}
+
+    for customer in customers:
+        spending[customer] = 0
+        categories[customer] = {}
+
+    for t in transactions:
+        if t["id"] in transaction_ids:
+            raise ValueError("Duplicate transaction ID found")
+
+        transaction_ids.add(t["id"])
+
+        customer = t["customer"]
+
+        if customer not in spending:
+            spending[customer] = 0
+            categories[customer] = {}
+
+        if t["status"] == "success":
+            amount = t["amount"]
+            category = t["category"]
+
+            spending[customer] += amount
+
+            if category not in categories[customer]:
+                categories[customer][category] = 0
+
+            categories[customer][category] += amount
+
+    report = []
+
+    for customer in spending:
+        top_category = None
+
+        if categories[customer]:
+            top_category = max(
+                categories[customer],
+                key=categories[customer].get
+            )
+
+        report.append({
+            "customer": customer,
+            "total_spending": spending[customer],
+            "top_category": top_category
+        })
+
+    report.sort(key=lambda x: (-x["total_spending"], x["customer"]))
+
+    for rank, item in enumerate(report, start=1):
+        item["rank"] = rank
+
+    return report
+
+
+transactions = [
+    {"id": 1, "customer": "Sir Qasim", "category": "Food",
+     "amount": 500, "status": "success"},
+
+    {"id": 2, "customer": "Sir Qasim", "category": "Travel",
+     "amount": 200, "status": "failed"},
+
+    {"id": 3, "customer": "Alyan", "category": "Food",
+     "amount": 700, "status": "success"}
+]
+
+customers = ["Sir Qasim", "Alyan", "Sir mehmood"]
+
+result = analyze_transactions(transactions, customers)
+
+for item in result:
+    print(item)

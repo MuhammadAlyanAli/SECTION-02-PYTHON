@@ -1,0 +1,107 @@
+
+#Task 10 | CSV Inventory Reconciliation
+#Concepts: CSV, file handling, validation
+#Problem: Read inventory.csv (sku,name,quantity) and movements.csv (sku,type,units). Apply IN and OUT movements in order, then write updated_inventory.csv and rejected_movements.csv.
+#Requirements: Reject unknown SKUs, negative or zero units, invalid movement types, and any OUT causing negative stock. Continue processing after rejected rows.
+#Sample / expected behavior: SKU P01 starts at 10; OUT 4, OUT 9, IN 2 -> final 8; second movement rejected.
+
+import csv
+
+
+def reconcile_inventory():
+    inventory = {}
+
+    with open("inventory.csv", "r", newline="") as file:
+        reader = csv.DictReader(file)
+
+        for row in reader:
+            sku = row["sku"]
+
+            if sku in inventory:
+                raise ValueError("Duplicate SKU found")
+
+            quantity = int(row["quantity"])
+
+            if quantity < 0:
+                raise ValueError("Invalid inventory quantity")
+
+            inventory[sku] = {
+                "name": row["name"],
+                "quantity": quantity
+            }
+
+    rejected = []
+
+    with open("movements.csv", "r", newline="") as file:
+        reader = csv.DictReader(file)
+
+        for row in reader:
+            sku = row["sku"]
+
+            try:
+                units = int(row["units"])
+                movement_type = row["type"].strip().upper()
+
+                if sku not in inventory:
+                    raise ValueError("Unknown SKU")
+
+                if units <= 0:
+                    raise ValueError("Units must be positive")
+
+                if movement_type == "IN":
+                    inventory[sku]["quantity"] += units
+
+                elif movement_type == "OUT":
+                    if inventory[sku]["quantity"] < units:
+                        raise ValueError("Insufficient stock")
+
+                    inventory[sku]["quantity"] -= units
+
+                else:
+                    raise ValueError("Invalid movement type")
+
+            except ValueError as error:
+                row["reason"] = str(error)
+                rejected.append(row)
+
+    with open("updated_inventory.csv", "w", newline="") as file:
+        fields = ["sku", "name", "quantity"]
+        writer = csv.DictWriter(file, fieldnames=fields)
+
+        writer.writeheader()
+
+        for sku, details in inventory.items():
+            writer.writerow({
+                "sku": sku,
+                "name": details["name"],
+                "quantity": details["quantity"]
+            })
+
+    with open("rejected_movements.csv", "w", newline="") as file:
+        fields = ["sku", "type", "units", "reason"]
+        writer = csv.DictWriter(file, fieldnames=fields)
+
+        writer.writeheader()
+        writer.writerows(rejected)
+
+
+# Sample inventory file
+with open("inventory.csv", "w", newline="") as file:
+    writer = csv.writer(file)
+    writer.writerow(["sku", "name", "quantity"])
+    writer.writerow(["P01", "Keyboard", 10])
+    writer.writerow(["P02", "Mouse", 20])
+
+
+# Sample movements file
+with open("movements.csv", "w", newline="") as file:
+    writer = csv.writer(file)
+    writer.writerow(["sku", "type", "units"])
+    writer.writerow(["P01", "OUT", 4])
+    writer.writerow(["P01", "OUT", 9])
+    writer.writerow(["P01", "IN", 2])
+
+
+reconcile_inventory()
+
+print("Inventory reconciliation completed.")

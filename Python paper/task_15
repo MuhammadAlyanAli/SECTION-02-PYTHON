@@ -1,0 +1,116 @@
+
+#Task 15 | Integrated Order Fulfillment System
+#Concepts: OOP, composition, files, exceptions, algorithms
+#Problem: Design Product, Cart, Order, and Inventory classes. Read a product catalog from JSON, build carts, apply percentage discounts, compute totals, and place orders with stock updates. Persist orders to JSON.
+#Requirements: Reject invalid quantities and out-of-stock purchases. Validate all items before changing inventory; roll back if order persistence fails. Generate unique order IDs. Include at least three unit tests using unittest.
+#Sample / expected behavior: Catalog: P1 price=100 stock=5; cart P1 x2 with 10% discount -> total 180, stock becomes 3 after successful order.
+
+import csv
+
+
+def reconcile_inventory():
+
+    inventory = {}
+
+
+    with open("inventory.csv", "r", newline="") as file:
+        reader = csv.DictReader(file)
+
+        for row in reader:
+            sku = row["sku"].strip()
+
+            if sku in inventory:
+                raise ValueError("Duplicate SKU found")
+
+            quantity = int(row["quantity"])
+
+            if quantity < 0:
+                raise ValueError("Invalid quantity")
+
+            inventory[sku] = {
+                "name": row["name"],
+                "quantity": quantity
+            }
+
+    rejected = []
+
+    
+    with open("movements.csv", "r", newline="") as file:
+        reader = csv.DictReader(file)
+
+        for row in reader:
+
+            sku = row["sku"].strip()
+            movement_type = row["type"].strip().upper()
+
+            try:
+                units = int(row["units"])
+
+                if sku not in inventory:
+                    raise ValueError("Unknown SKU")
+
+                if units <= 0:
+                    raise ValueError("Units must be positive")
+
+                if movement_type == "IN":
+                    inventory[sku]["quantity"] += units
+
+                elif movement_type == "OUT":
+
+                    if inventory[sku]["quantity"] < units:
+                        raise ValueError("Insufficient stock")
+
+                    inventory[sku]["quantity"] -= units
+
+                else:
+                    raise ValueError("Invalid movement type")
+
+            except ValueError as error:
+                row["reason"] = str(error)
+                rejected.append(row)
+
+    
+    with open("updated_inventory.csv", "w", newline="") as file:
+
+        fields = ["sku", "name", "quantity"]
+
+        writer = csv.DictWriter(file, fieldnames=fields)
+        writer.writeheader()
+
+        for sku, details in inventory.items():
+            writer.writerow({
+                "sku": sku,
+                "name": details["name"],
+                "quantity": details["quantity"]
+            })
+
+    
+    with open("rejected_movements.csv", "w", newline="") as file:
+
+        fields = ["sku", "type", "units", "reason"]
+
+        writer = csv.DictWriter(file, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rejected)
+
+    print("Inventory updated successfully!")
+
+
+with open("inventory.csv", "w", newline="") as file:
+    writer = csv.writer(file)
+
+    writer.writerow(["sku", "name", "quantity"])
+    writer.writerow(["P01", "Keyboard", 10])
+    writer.writerow(["P02", "Mouse", 20])
+
+
+with open("movements.csv", "w", newline="") as file:
+    writer = csv.writer(file)
+
+    writer.writerow(["sku", "type", "units"])
+    writer.writerow(["P01", "OUT", 4])
+    writer.writerow(["P01", "OUT", 9])
+    writer.writerow(["P01", "IN", 2])
+
+
+reconcile_inventory()

@@ -1,0 +1,37 @@
+#Task 12 | Custom Iterable Range Toolkit
+#Concepts: Iterators, generators, dunder methods
+#Problem: Create a ReversibleRange(start,stop,step) class supporting iteration, reversed iteration, len(), and membership tests without constructing a list.
+#Requirements: Match Python range stop-exclusive semantics for positive and negative nonzero steps. Implement __iter__, __reversed__, __len__, and __contains__.
+#Sample / expected behavior: ReversibleRange(2,11,3) -> [2,5,8]; reversed -> [8,5,2]; 5 in object -> True.
+
+class ReversibleRange:
+
+    def __init__(self, start, stop, step=1):
+        if step == 0:
+            raise ValueError("Step cannot be zero")
+
+        self.start = start
+        self.stop = stop
+        self.step = step
+
+        self._range = range(start, stop, step)
+
+    def __iter__(self):
+        return iter(self._range)
+
+    def __reversed__(self):
+        return reversed(self._range)
+
+    def __len__(self):
+        return len(self._range)
+
+    def __contains__(self, value):
+        return value in self._range
+
+
+numbers = ReversibleRange(2, 11, 3)
+
+print("Forward:", list(numbers))
+print("Reverse:", list(reversed(numbers)))
+print("Length:", len(numbers))
+print("Is 5 available?", 5 in numbers)
